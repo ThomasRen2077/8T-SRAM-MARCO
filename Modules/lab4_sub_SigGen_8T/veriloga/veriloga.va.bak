@@ -1,0 +1,9 @@
+// VerilogA for ece4740, lab4_tb_sub_SigGen_8T, veriloga
+
+`include "constants.vams"
+`include "disciplines.vams"
+
+module lab4_tb_sub_SigGen_8T;
+
+
+endmodule

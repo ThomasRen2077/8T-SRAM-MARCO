@@ -1,0 +1,28 @@
+% set up cds_srr function
+addpath('/opt/cadence/INNOVUS201/tools.lnx86/spectre/matlab/64bit');
+
+% directory that contains the simulation outputs
+directory = sprintf('%s/MATLAB/%s.psf', getenv('HOME'), '8T_Array_Result0');
+
+% set up basic parameters
+Vdd = 1.2; % define vdd
+
+v_high_thre = 0.75 * Vdd;
+v_low_thre = 0.25 * Vdd;
+
+% get input signals
+Result_0 = cds_srr(directory, 'tran-tran', '/Result0', 0);
+
+t_ps =  Result_0.time * 1e9;
+
+Result_0 = Result_0.V; 
+
+disp(t_ps(100))
+
+for rol = 0:7 
+    for t = 1:length(t_ps)
+        if (t_ps(t) > 10) && t_ps(t) >10 && Result_0 < v_low_thre
+            disp("Read 0 successfully")
+        end
+    end
+end

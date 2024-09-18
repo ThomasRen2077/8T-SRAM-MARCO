@@ -1,0 +1,94 @@
+// VerilogA for ece4740, lab4_sub_SigGen, veriloga
+
+`include "constants.vams"
+`include "disciplines.vams"
+
+module lab4_sub_SigGen(WL, Phi, Write_EN, Data);
+    // Declare inputs and outputs
+    output WL;
+    output [7: 0] Phi;
+    output [7: 0] Write_EN;
+    output [7: 0] Data;    
+
+    voltage WL;
+    voltage [7: 0] Phi;
+    voltage [7: 0] Write_EN;
+    voltage [7: 0] Data;
+
+    // Clock period for test cases
+    localparam cp = 1n;  // Shorter period for rapid testing
+
+    // Constants for clock periods and signal transitions
+    parameter real clk_period = cp from (0:inf);
+    parameter real trise = 20p from [0:inf];
+    parameter real tfall = 20p from [0:inf];
+
+    // Constants for voltage signal bounds
+    real v_high = 1.2;
+    real v_low = 0.0;
+
+    // Internal variables to hold the current state of input signals
+    parameter integer WL_Seq [0:23] = '{0,1,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,1,0,0};
+    parameter integer Phi_Seq [0:23] = '{1,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,1,1,1,1};
+    parameter integer Write_EN_Seq [0:23] = '{1,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0};
+    parameter integer Data_Seq [0:23] = '{0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1};
+
+    real WL_cur;
+    real Phi_cur [0: 7];
+    real Write_EN_cur [0: 7];
+    real Data_cur [0: 7];
+
+	genvar i = 0;
+	genvar j = 0;
+
+    // TestCount Integer
+    integer curInputCount = 0;
+    integer curCycleCount = 0;
+    analog begin
+        @(initial_step) begin
+            curInputCount = 0;
+            curCycleCount = 0;
+            WL_cur = v_low; 
+            for (i = 0; i < 8; i = i + 1) begin
+                Phi_cur[i] = v_low; 
+                Write_EN_cur[i] = v_low; 
+                Data_cur[i] = v_low;
+            end
+        end
+
+        @(timer(1n, clk_period)) begin
+                // Update signals based on test case
+                for (i = 0; i < 8; i = i + 1) begin
+                    WL_cur = WL_Seq[curInputCount]? v_high : v_low;
+                    if (i == curCycleCount) begin
+                        Phi_cur[i] = Phi_Seq[curInputCount]? v_high : v_low;
+                        Write_EN_cur[i] = Write_EN_Seq[curInputCount]? v_high : v_low;
+                        Data_cur[i] = Data_Seq[curInputCount]? v_high : v_low;
+                    end
+                    else begin
+                        Phi_cur[i] = v_low; 
+                        Write_EN_cur[i] = v_low; 
+                        Data_cur[i] = v_low;
+                    end
+                end
+
+                curInputCount = curInputCount + 1;
+                // Reset test count after last case to restart the sequence
+                if (curInputCount >= 24) begin
+                    curInputCount = 0;
+                    curCycleCount = curCycleCount + 1;
+                end
+
+                if (curCycleCount >= 8) begin
+                    curCycleCount = 0;
+                end
+        end
+        V(WL) <+  transition(WL_cur, 0, trise, tfall);
+        for (j = 0; j < 8; j = j + 1) begin
+            V(Phi[j]) <+ transition(Phi_cur[j], 0, trise, tfall);
+            V(Write_EN[j]) <+ transition(Write_EN_cur[j], 0, trise, tfall);
+            V(Data[j]) <+ transition(Data_cur[j], 0, trise, tfall);
+        end
+    end
+
+endmodule
